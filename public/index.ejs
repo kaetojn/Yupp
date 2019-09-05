@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular-sanitize.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<title>Yupp Assignment</title>
+</head>
+
+
+<body>
+
+<h2>Delete Transaction</h2>
+<form method="post" onsubmit="appendID()" id="deleteform">
+<input name="transid" type="text" placeholder="Transaction ID"/><br />
+<input type="submit" class="submit" value="Delete"/><br><br> 
+</form>
+
+
+<h2>Add Transaction </h2>
+<form action = "/api/transactions/add" method="post">
+<input name="vendor" type="text" placeholder="Vendor Name"/> <br />
+<input name="amount" type="text" placeholder="Amount"/> <br />
+<input name="date" type="date" placeholder="Date"/> <br />
+<input type="submit" class="submit" value="Add Transaction"/>
+</form>
+
+<br><br>
+<h2>Table View</h2>
+<div id="Transactions" ng-app="mainApp" ng-controller="transController" ng-init="trans = {req.trans}">
+<div id="transactions" class="transactions" ng-bind-html="transactions"> 
+</div>
+</div>
+
+<br><br>
+<h2>Export</h2>
+<button onclick="exportTableToCSV('transactions.csv')">Export HTML Table To CSV File</button>
+
+<script>
+
+//Angular Controller
+var mainApp = angular.module("mainApp", ["ngSanitize"]);
+var transactions
+         
+mainApp.controller('transController', ['$scope', '$http', function($scope, $http) {
+   angular.element(document).ready(function () {
+    //Get all Transactions
+      $http.get('/api/transactions/trans') 
+      .then(function(response){
+         var trans = response.data;
+
+         //Iterate through Transactions and Create and Bind Table Element in transaction div
+         $scope.transactions = "<table><tr><th>ID</th><th>Vendor</th><th>Amount</th> <th>Date</th></tr>"
+         for(var i = 0; i < trans.length; i++){
+           $scope.transactions += "<tr>"
+           $scope.transactions += "<td>" + trans[i]._id + "</td>"
+           $scope.transactions += "<td>" + trans[i].vendor + "</td>"
+           $scope.transactions += "<td>" + trans[i].amount + "</td>"
+           $scope.transactions += "<td>" + trans[i].date + "</td>"
+           $scope.transactions += "</tr>"
+         }
+         $scope.transactions += "</table>"
+      });
+   });
+}]);
+</script>
+
+<script>
+  function appendID(){
+    //Creare action path for delete form by using Value
+    var ac = "/api/transactions/delete/" + document.getElementsByName("transid")[0].value;
+    var form = document.getElementById('deleteform');
+    form.action = ac ;
+}
+
+</script>
+
+<script type="text/javascript">
+function exportTableToCSV(filename) {
+    var csv = [];
+    var rows = document.querySelectorAll("table tr");
+    
+    for (var i = 0; i < rows.length; i++) {
+        var row = [], cols = rows[i].querySelectorAll("td, th");
+        
+        for (var j = 0; j < cols.length; j++) 
+            row.push(cols[j].innerText);
+        
+        csv.push(row.join(","));        
+    }
+
+    // Download CSV file
+    downloadCSV(csv.join("\n"), filename);
+}
+</script>
+
+<script type="text/javascript">
+  function downloadCSV(csv, filename) {
+    var csvFile;
+    var downloadLink;
+
+    // CSV file
+    csvFile = new Blob([csv], {type: "text/csv"});
+
+    // Download link
+    downloadLink = document.createElement("a");
+
+    // File name
+    downloadLink.download = filename;
+
+    // Create a link to the file
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+
+    // Hide download link
+    downloadLink.style.display = "none";
+
+    // Add the link to DOM
+    document.body.appendChild(downloadLink);
+
+    // Click download link
+    downloadLink.click();
+}
+</script>
+
+
+</body>
+</html>
